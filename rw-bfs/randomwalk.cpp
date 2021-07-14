@@ -52,18 +52,24 @@ int main(int argc, char* argv[]) {
 		//printf("Resetting scores: %f\n", elapsed);
 		//startTimer();
 			
+		//this does not need to be a factor of the total number of walks.
+		const int GRANULARITY = 500;
 
-		parallel_for (int i = 0; i < NUM_POINTS; i++) {
-			for (int w=0; w<NUM_WALKS; w++) {
-				unsigned int rand_p = i + 123132141 + w;
+		parallel_for (long thread_num = 0; thread_num < NUM_POINTS * NUM_WALKS; thread_num += GRANULARITY) {
+			unsigned int rand_p = thread_num * 1234567;
+			for (long inner = thread_num; inner < NUM_POINTS * NUM_WALKS && inner < thread_num + GRANULARITY; inner++) {
+				int i = inner / NUM_WALKS;
+				int w = inner % NUM_WALKS;
 				int start_node = points[i];
 				walks[i][0][w] = step(G, start_node, &rand_p);
 			}
-		}
+		} 
 		for (int steps = 1; steps < WALK_LENGTH; steps++) {
-			parallel_for (int i=0; i < NUM_POINTS; i++) {
-				for (int w=0; w<NUM_WALKS; w++) {
-					unsigned int rand_p = i + 123132141 + w;
+			parallel_for (long thread_num = 0; thread_num < NUM_POINTS * NUM_WALKS; thread_num += GRANULARITY) {
+				unsigned int rand_p = thread_num * 123132141;
+				for (long inner = thread_num; inner < NUM_POINTS * NUM_WALKS && inner < thread_num + GRANULARITY; inner++) {
+					int i = inner / NUM_WALKS;
+					int w = inner % NUM_WALKS;
 					int curr = walks[i][steps-1][w];
 					curr = step(G, curr, &rand_p);
 					walks[i][steps][w] = curr;

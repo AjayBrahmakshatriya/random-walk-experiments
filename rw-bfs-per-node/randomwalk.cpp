@@ -54,8 +54,8 @@ int main(int argc, char* argv[]) {
 			
 
 		parallel_for (int i = 0; i < NUM_POINTS; i++) {
+			unsigned int rand_p = i * 123132141;
 			for (int w=0; w<NUM_WALKS; w++) {
-				unsigned int rand_p = i + 123132141 + w;
 				int start_node = points[i];
 				walks[i][0][w] = step(G, start_node, &rand_p);
 			}
@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
 				struct timeval start_time_;
 				gettimeofday(&start_time_, NULL);
 				*/
-				std::sort(&walks[i][steps-1][0], &walks[i][steps-1][0] + NUM_WALKS);
+				//std::sort(&walks[i][steps-1][0], &walks[i][steps-1][0] + NUM_WALKS);
 				//timing code needs to avoid races
 				/*
 				struct timeval elapsed_time_;
@@ -75,7 +75,6 @@ int main(int argc, char* argv[]) {
     			fetch_and_add(sorting_time, elapsed_time_.tv_sec*1e6 + elapsed_time_.tv_usec);*/
 
 				for (int w=0; w<NUM_WALKS; w++) {
-					unsigned int rand_p = i + 123132141 + w;
 					int curr = walks[i][steps-1][w];
 					curr = step(G, curr, &rand_p);
 					walks[i][steps][w] = curr;
