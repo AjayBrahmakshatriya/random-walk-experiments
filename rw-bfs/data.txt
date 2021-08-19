@@ -1,0 +1,76 @@
+randomwalk_cilk_step_function_binary_search
+roadNet-CA.weighted.mtx.wsg
+Prefix sum time: 0.006594
+5.074471
+soc-orkut.mtx.wsg
+Prefix sum time: 0.048860
+17.419640
+road_usa.weighted.mtx.wsg
+Prefix sum time: 0.025166
+4.873214
+soc-twitter-2010.mtx.wsg
+Prefix sum time: 0.136762
+23.021814
+soc-sinaweibo.mtx.wsg
+Prefix sum time: 0.122014
+21.062283
+randomwalk_cilk_step_function_binary_search_extra
+roadNet-CA.weighted.mtx.wsg
+5.607524
+soc-orkut.mtx.wsg
+16.486521
+road_usa.weighted.mtx.wsg
+5.033950
+soc-twitter-2010.mtx.wsg
+22.494198
+soc-sinaweibo.mtx.wsg
+20.764191
+randomwalk_cilk_step_function_sorted
+roadNet-CA.weighted.mtx.wsg
+8.085195
+soc-orkut.mtx.wsg
+22.436174
+road_usa.weighted.mtx.wsg
+4.142050
+soc-twitter-2010.mtx.wsg
+260.424957
+soc-sinaweibo.mtx.wsg
+102.374245
+randomwalk_openmp_step_function_binary_search
+roadNet-CA.weighted.mtx.wsg
+Prefix sum time: 0.001505
+2.320509
+soc-orkut.mtx.wsg
+Prefix sum time: 0.047853
+14.399090
+road_usa.weighted.mtx.wsg
+Prefix sum time: 0.014442
+2.301591
+soc-twitter-2010.mtx.wsg
+Prefix sum time: 0.360452
+21.260450
+soc-sinaweibo.mtx.wsg
+Prefix sum time: 0.386298
+18.973671
+randomwalk_openmp_step_function_binary_search_extra
+roadNet-CA.weighted.mtx.wsg
+2.392443
+soc-orkut.mtx.wsg
+14.105748
+road_usa.weighted.mtx.wsg
+2.351884
+soc-twitter-2010.mtx.wsg
+20.486032
+soc-sinaweibo.mtx.wsg
+19.097448
+randomwalk_openmp_step_function_sorted
+roadNet-CA.weighted.mtx.wsg
+2.022878
+soc-orkut.mtx.wsg
+20.039883
+road_usa.weighted.mtx.wsg
+1.831994
+soc-twitter-2010.mtx.wsg
+256.462585
+soc-sinaweibo.mtx.wsg
+99.950272

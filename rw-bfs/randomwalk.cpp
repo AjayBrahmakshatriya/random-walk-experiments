@@ -1,25 +1,22 @@
 #include "intrinsics.h"
 #include <algorithm>
-#include "../defs.h"
+#include WEIGHTING_HEADER
 
-//int32_t walks[NUM_POINTS][NUM_WALKS][WALK_LENGTH];
-
-int step(Graph &G, int curr, unsigned int* rand_p) {
-	int n_count = G.out_degree(curr);
-	if (n_count == 0)
-		return curr;
-	int rand_index = rand_r(rand_p) % n_count;
-	return G.get_out_index_()[curr][rand_index];	
-}
-typedef int wtype[WALK_LENGTH][NUM_WALKS];
 int main(int argc, char* argv[]) {
-	wtype * walks = new wtype[NUM_POINTS];
-	if (argc < 2) {
-		printf("Usage: %s <graph filename>\n", argv[0]);
+	
+	if (argc < 5) {
+		printf("Usage: %s <graph filename> <NUM_POINTS> <NUM_WALKS> <WALK_LENGTH>\n", argv[0]);
 		return -1;
 	}
-	Graph G;
-	G = builtin_loadEdgesFromFile(argv[1]);
+	const int NUM_POINTS = atoi(argv[2]);
+	const int NUM_WALKS = atoi(argv[3]);
+	const int WALK_LENGTH = atoi(argv[4]);
+	Graph_T G;
+	G = load_graph(argv[1]);
+	int * walks = new int[NUM_POINTS * NUM_WALKS * WALK_LENGTH];
+	//int (* walks)[NUM_WALKS][WALK_LENGTH] = new int[NUM_POINTS][NUM_WALKS][WALK_LENGTH];
+	//auto walks = new int[NUM_POINTS][WALK_LENGTH][NUM_WALKS];
+
 
 	int32_t num_vertices = builtin_getVertices(G);
 
@@ -34,9 +31,10 @@ int main(int argc, char* argv[]) {
 	}
 	int32_t *points = new int[NUM_POINTS];
 	
+	srand(17);
 	// We will use first n points just for reproducibility across implementations
 	for (int i = 0; i < NUM_POINTS; i++) {
-		points[i] = i;
+		points[i] = rand() % num_vertices;
 	}	
 
 	int64_t sorting_time = 0;
@@ -53,26 +51,31 @@ int main(int argc, char* argv[]) {
 		//startTimer();
 			
 		//this does not need to be a factor of the total number of walks.
-		const int GRANULARITY = 500;
+		const int THREADS = 1000;
+		unsigned int rand_p[THREADS];
+		for (int i=0; i<THREADS; i++) {
+			rand_p[i] = i;
+		}
 
-		parallel_for (long thread_num = 0; thread_num < NUM_POINTS * NUM_WALKS; thread_num += GRANULARITY) {
-			unsigned int rand_p = thread_num * 1234567;
-			for (long inner = thread_num; inner < NUM_POINTS * NUM_WALKS && inner < thread_num + GRANULARITY; inner++) {
+		const int thead_work = (NUM_POINTS * NUM_WALKS + THREADS - 1) / THREADS;
+		parallel_for (long thread_num = 0; thread_num < THREADS; thread_num++) {
+			long last = std::min((long)((thread_num+1)*thead_work), (long)(NUM_POINTS * NUM_WALKS));
+			for (long inner = thread_num * thead_work; inner < last; inner++) {
 				int i = inner / NUM_WALKS;
 				int w = inner % NUM_WALKS;
 				int start_node = points[i];
-				walks[i][0][w] = step(G, start_node, &rand_p);
+				walks[(i * NUM_WALKS + 0) * WALK_LENGTH + w] = step(G, start_node, &rand_p[thread_num]);
 			}
 		} 
 		for (int steps = 1; steps < WALK_LENGTH; steps++) {
-			parallel_for (long thread_num = 0; thread_num < NUM_POINTS * NUM_WALKS; thread_num += GRANULARITY) {
-				unsigned int rand_p = thread_num * 123132141;
-				for (long inner = thread_num; inner < NUM_POINTS * NUM_WALKS && inner < thread_num + GRANULARITY; inner++) {
+			parallel_for (long thread_num = 0; thread_num < THREADS; thread_num++) {
+				long last = std::min((long)((thread_num+1)*thead_work), (long)(NUM_POINTS * NUM_WALKS));
+				for (long inner = thread_num * thead_work; inner < last; inner++) {
 					int i = inner / NUM_WALKS;
 					int w = inner % NUM_WALKS;
-					int curr = walks[i][steps-1][w];
-					curr = step(G, curr, &rand_p);
-					walks[i][steps][w] = curr;
+					int curr = walks[(i * NUM_WALKS + (steps - 1)) * WALK_LENGTH + w];
+					curr = step(G, curr, &rand_p[thread_num]);
+					walks[(i * NUM_WALKS + steps) * WALK_LENGTH + w] = curr;
 				}
 			}
 		}
@@ -82,12 +85,12 @@ int main(int argc, char* argv[]) {
 		
 		// Create compressed scores for each starting point in parallel
 		parallel_for (int i = 0; i < NUM_POINTS; i++) {
+			int* start = &walks[i * NUM_WALKS * WALK_LENGTH];
 			// Now we will sort the visited vertices per starting point
-			std::sort(&walks[i][0][0], &walks[i][0][0] + NUM_WALKS * WALK_LENGTH);
+			std::sort(start, start + NUM_WALKS * WALK_LENGTH);
 			// Each vertex inside is sorted
 			int counter = -1;
 			int last = -1;
-			int* start = &walks[i][0][0];
 			for (int j = 0; j < NUM_WALKS * WALK_LENGTH; j++) {
 				if (start[j] != last) {
 					last = start[j];
