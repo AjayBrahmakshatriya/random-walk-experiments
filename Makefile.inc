@@ -1,1 +1,1 @@
-GRAPHIT_DIR=/data/commit/graphit/ajaybr/scratch/graphit
+GRAPHIT_DIR=/data/commit/graphit/dwisdom/graphit

@@ -1,6 +1,17 @@
 include ../Makefile.inc
 .PHONY: all
 all: 
-	g++ -I ${GRAPHIT_DIR}/src/runtime_lib -O3 -DOPENMP -fopenmp randomwalk.cpp -o randomwalk
+	for step in ../step-functions/*.h; do\
+		$(MAKE) --no-print-directory randomwalk_cilk_$$(basename $${step%.h});\
+		$(MAKE) --no-print-directory randomwalk_openmp_$$(basename $${step%.h});\
+	done
+
+randomwalk_cilk_% : randomwalk.cpp ../step-functions/%.h
+	g++  -I ${GRAPHIT_DIR}/src/runtime_lib  -O3 -DOPENMP -DWEIGHTING_HEADER="$^" -fcilkplus randomwalk.cpp -o $@ -g
+
+randomwalk_openmp_% : randomwalk.cpp ../step-functions/%.h
+	g++  -I ${GRAPHIT_DIR}/src/runtime_lib  -O3 -DOPENMP -DWEIGHTING_HEADER="$^" -fopenmp randomwalk.cpp -o $@ -g
+.PHONY : clean
 clean:
-	rm randomwalk
+	- rm randomwalk_openmp_*
+	- rm randomwalk_cilk_*

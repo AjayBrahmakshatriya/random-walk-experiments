@@ -1,26 +1,19 @@
 #include "intrinsics.h"
 #include <algorithm>
-#include "../defs.h"
+#include WEIGHTING_HEADER
 
-//int32_t walks[NUM_POINTS][NUM_WALKS][WALK_LENGTH];
 
-int step(Graph &G, int curr, unsigned int* rand_p) {
-	int n_count = G.out_degree(curr);
-	if (n_count == 0)
-		return curr;
-	int rand_index = rand_r(rand_p) % n_count;
-	return G.get_out_index_()[curr][rand_index];	
-}
-typedef int wtype[WALK_LENGTH][NUM_WALKS];
 int main(int argc, char* argv[]) {
-	wtype * walks = new wtype[NUM_POINTS];
-	if (argc < 2) {
-		printf("Usage: %s <graph filename>\n", argv[0]);
+	if (argc < 5) {
+		printf("Usage: %s <graph filename> <NUM_POINTS> <NUM_WALKS> <WALK_LENGTH>\n", argv[0]);
 		return -1;
 	}
-	Graph G;
-	G = builtin_loadEdgesFromFile(argv[1]);
-
+	const int NUM_POINTS = atoi(argv[2]);
+	const int NUM_WALKS = atoi(argv[3]);
+	const int WALK_LENGTH = atoi(argv[4]);
+	Graph_T G;
+	G = load_graph(argv[1]);
+	int * walks = new int[NUM_POINTS * NUM_WALKS * WALK_LENGTH];
 	int32_t num_vertices = builtin_getVertices(G);
 
 	// WALK_LENGTH * NUM_WALKS is the bound on how many vertices we can visit. 
@@ -35,8 +28,9 @@ int main(int argc, char* argv[]) {
 	int32_t *points = new int[NUM_POINTS];
 	
 	// We will use first n points just for reproducibility across implementations
+	srand(17);
 	for (int i = 0; i < NUM_POINTS; i++) {
-		points[i] = i;
+		points[i] = rand()%num_vertices;
 	}	
 
 	int64_t sorting_time = 0;
@@ -57,7 +51,7 @@ int main(int argc, char* argv[]) {
 			unsigned int rand_p = i * 123132141;
 			for (int w=0; w<NUM_WALKS; w++) {
 				int start_node = points[i];
-				walks[i][0][w] = step(G, start_node, &rand_p);
+				walks[(i * WALK_LENGTH + 0) * NUM_WALKS + w] = step(G, start_node, &rand_p);
 			}
 			for (int steps = 1; steps < WALK_LENGTH; steps++) {
 				//sort the previous step to get a memory sweep
@@ -75,9 +69,9 @@ int main(int argc, char* argv[]) {
     			fetch_and_add(sorting_time, elapsed_time_.tv_sec*1e6 + elapsed_time_.tv_usec);*/
 
 				for (int w=0; w<NUM_WALKS; w++) {
-					int curr = walks[i][steps-1][w];
+					int curr = walks[(i * WALK_LENGTH + steps - 1) * NUM_WALKS + w];
 					curr = step(G, curr, &rand_p);
-					walks[i][steps][w] = curr;
+					walks[(i * WALK_LENGTH + steps) * NUM_WALKS + w] = curr;
 				}
 			}
 
@@ -85,7 +79,7 @@ int main(int argc, char* argv[]) {
 			//printf("Random walks: %f\n", elapsed);
 			//startTimer();
 			// Now we will sort the visited vertices per starting point
-			std::sort(&walks[i][0][0], &walks[i][0][0] + NUM_WALKS * WALK_LENGTH);
+			std::sort(&walks[i * NUM_WALKS * WALK_LENGTH], &walks[i * NUM_WALKS * WALK_LENGTH] + NUM_WALKS * WALK_LENGTH);
 			
 		}
 		//elapsed = stopTimer();
@@ -97,7 +91,7 @@ int main(int argc, char* argv[]) {
 			// Each vertex inside is sorted
 			int counter = -1;
 			int last = -1;
-			int* start = &walks[i][0][0];
+			int* start = &walks[i * NUM_WALKS * WALK_LENGTH];
 			for (int j = 0; j < NUM_WALKS * WALK_LENGTH; j++) {
 				if (start[j] != last) {
 					last = start[j];
@@ -116,7 +110,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	float elapsed = stopTimer();
-	printf("%f\n", elapsed);
+	printf("Runtime: %f\n", elapsed);
 
 	//printf("CPU time spent sorting each step: %f\n", sorting_time/1.0e6);
 	//std::cout << "Total time elapsed = " << elapsed << std::endl;

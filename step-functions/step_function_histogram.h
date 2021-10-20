@@ -9,20 +9,27 @@ typedef int32_t probability_t;
 struct HistogramRow {
 	int node1;
 	int node2;
+	// p/weight is the probability of selecting node1
 	probability_t p;
 	probability_t weight;
 };
 
-int sample_histogram(HistogramRow* histogram, int num_edges, unsigned int* rand_p) {
-	int row = rand_r(rand_p) % num_edges;
-	if (rand_r(rand_p) % histogram[row].weight < histogram[row].p) {
-		return histogram[row].node1;
+int sample_bucket(HistogramRow* bucket, unsigned int* rand_p) {
+	if (rand_r(rand_p) % bucket->weight < bucket->p) {
+		return bucket->node1;
 	} else {
-		return histogram[row].node2;
+		return bucket->node2;
 	}
 }
 
+int sample_histogram(HistogramRow* histogram, int num_edges, unsigned int* rand_p) {
+	int row = rand_r(rand_p) % num_edges;
+	return sample_bucket(histogram + row, rand_p);
+}
+
 void make_histogram(probability_t* weights, HistogramRow* histogram, int num_edges) {
+	//This sort is a problem as I don't sort the edges, so this swaps edge weights.
+	//I will fix this as soon as I remove the sorting from this algorithm
 	std::sort(weights, weights + num_edges);
 	//make sure the total weight is divisible by num_edges
 	probability_t total_weight = 0;
@@ -42,8 +49,8 @@ void make_histogram(probability_t* weights, HistogramRow* histogram, int num_edg
 
 		histogram[i].node1 = i;
 		histogram[i].node2 = first_full_edge;
-		histogram[i].weight = equal_weight;
 		histogram[i].p = weights[i];
+		histogram[i].weight = equal_weight;
 		//take some probability from an overfull edge to fill in this bar
 		weights[first_full_edge] -= equal_weight - weights[i];
 		if (weights[first_full_edge] < equal_weight) {
@@ -51,7 +58,7 @@ void make_histogram(probability_t* weights, HistogramRow* histogram, int num_edg
 		}
 	}
 }
-
+/*
 //Test the histogram sampling
 int main() {
 	int n = 20;
@@ -84,30 +91,17 @@ int main() {
 		printf("%d occurred %d times.\n", i, counts[i]);
 	}
 	return 0;
-}
+}*/
 
-/*
+
 typedef WGraph Graph_T;
-
+HistogramRow* buckets;
 Graph_T load_graph(std::string file_name) {
 	
     Graph_T G = builtin_loadWeightedEdgesFromFile(file_name);
-	startTimer();
 	int vertecies = builtin_getVertices(G);
-	parallel_for (int i=0; i<vertecies; i++) {
-		WNode* edges = G.get_out_index_()[i];
-		int edge_count = G.out_degree(i);
-		edges[0].w += 1;
-		for (int edge = 1; edge < edge_count; edge++) {
-			//Replace weights with a prefix sum
-			edges[edge].w += edges[edge-1].w + 1;
-		}
-		//if (edges[edge_count-1].w <=0) {
-		//	//printf("Zero weight\n");
-		//}
-	}
-	float elapsed = stopTimer();
-	printf("Prefix sum time: %f\n", elapsed);
+	int edges = G.num_edges();
+	buckets = new HistogramRow[edges]();
     return G;
 }
 
@@ -115,24 +109,29 @@ int step(WGraph &G, int curr, unsigned int* rand_p) {
 	int n_count = G.out_degree(curr);
 	if (n_count == 0)
 		return curr;
-	
 	WNode* edges = G.get_out_index_()[curr];
-	int total_weight = edges[n_count-1].w;
+	//The vertex array stores pointers into the edges array, so I need to covert to index
+	int edges_index = edges - G.get_out_index_()[0];
 
-	int rand_index = rand_r(rand_p) % total_weight;
-	
-	int lower_index = 0;
-	int higher_index = n_count - 1;
-	while (lower_index != higher_index) {
-		int midpoint = (lower_index + higher_index) / 2;
-		if (edges[midpoint].w < rand_index) {
-			lower_index = midpoint + 1;
-		} else {
-			higher_index = midpoint;
+	int bucket_id = edges_index + rand_r(rand_p) % n_count;
+
+
+	//weight is always the last field set in a bucket
+	//Therefore if this bucket has nonzero weight, some other thread finished constructing it.
+	if (buckets[bucket_id].weight==0) {
+		//Initialize a set of buckets;
+		probability_t weights[n_count];
+		for (int i=0; i<n_count; i++) {
+			weights[i] = edges[i].w + 1;
 		}
+		//There may be races in this function, but as long as its deterministic they will be benign.
+		make_histogram(weights, buckets + edges_index, n_count);
 	}
-	return edges[lower_index];	
+
+	int selectedEdge = sample_bucket(buckets + bucket_id, rand_p);
+
+	return edges[selectedEdge].v;	
 }
-*/
+
 #endif
 

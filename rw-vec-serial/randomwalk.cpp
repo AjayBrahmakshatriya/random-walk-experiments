@@ -21,8 +21,8 @@ int main(int argc, char* argv[]) {
 	}
 	Graph G;
 	G = builtin_loadEdgesFromFile(argv[1]);
-
 	int32_t num_vertices = builtin_getVertices(G);
+
 	int32_t *scores = new int[NUM_POINTS * num_vertices];
 	if (scores == nullptr) {
 		printf("Out of mem\n");
@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
 
 	startTimer();
 
-	for (int trial = 0; trial < 1; trial++) {	
+	for (int trial = 0; trial < 10; trial++) {	
 		// Perform the random walk, no need to reset
 		for (int i = 0; i < NUM_POINTS; i++) {
 			int seed = points[i];
@@ -74,7 +74,8 @@ int main(int argc, char* argv[]) {
 
 	float elapsed = stopTimer();
 	
-	std::cout << "Total time elapsed = " << elapsed << std::endl;
+	//std::cout << "Total time elapsed = " << elapsed << std::endl;
+	printf("%f\n", elapsed);
 	return 0;
 	
 }

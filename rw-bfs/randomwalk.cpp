@@ -64,18 +64,18 @@ int main(int argc, char* argv[]) {
 				int i = inner / NUM_WALKS;
 				int w = inner % NUM_WALKS;
 				int start_node = points[i];
-				walks[(i * NUM_WALKS + 0) * WALK_LENGTH + w] = step(G, start_node, &rand_p[thread_num]);
+				walks[(i * WALK_LENGTH + 0) * NUM_WALKS + w] = step(G, start_node, &rand_p[thread_num]);
 			}
-		} 
+		}
 		for (int steps = 1; steps < WALK_LENGTH; steps++) {
 			parallel_for (long thread_num = 0; thread_num < THREADS; thread_num++) {
 				long last = std::min((long)((thread_num+1)*thead_work), (long)(NUM_POINTS * NUM_WALKS));
 				for (long inner = thread_num * thead_work; inner < last; inner++) {
 					int i = inner / NUM_WALKS;
 					int w = inner % NUM_WALKS;
-					int curr = walks[(i * NUM_WALKS + (steps - 1)) * WALK_LENGTH + w];
+					int curr = walks[(i * WALK_LENGTH + steps - 1) * NUM_WALKS + w];
 					curr = step(G, curr, &rand_p[thread_num]);
-					walks[(i * NUM_WALKS + steps) * WALK_LENGTH + w] = curr;
+					walks[(i * WALK_LENGTH + steps) * NUM_WALKS + w] = curr;
 				}
 			}
 		}
@@ -109,7 +109,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	float elapsed = stopTimer();
-	printf("%f\n", elapsed);
+	printf("Runtime: %f\n", elapsed);
 
 	//printf("CPU time spent sorting each step: %f\n", sorting_time/1.0e6);
 	//std::cout << "Total time elapsed = " << elapsed << std::endl;

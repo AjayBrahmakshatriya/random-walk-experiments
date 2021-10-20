@@ -1,26 +1,22 @@
 #include "intrinsics.h"
 #include <algorithm>
-#include "../defs.h"
+#include WEIGHTING_HEADER
+#include <sys/time.h>
+#include <sparsehash/dense_hash_map>
 
-//int32_t walks[NUM_POINTS][NUM_WALKS][WALK_LENGTH];
 
-int step(Graph &G, int curr, unsigned int* rand_p) {
-	int n_count = G.out_degree(curr);
-	if (n_count == 0)
-		return curr;
-	int rand_index = rand_r(rand_p) % n_count;
-	return G.get_out_index_()[curr][rand_index];	
-}
-//typedef int wtype[NUM_WALKS][WALK_LENGTH];
 
 int main(int argc, char* argv[]) {
 	//wtype * walks = new wtype[NUM_POINTS];
-	if (argc < 2) {
-		printf("Usage: %s <graph filename>\n", argv[0]);
+	if (argc < 5) {
+		printf("Usage: %s <graph filename> <NUM_POINTS> <NUM_WALKS> <WALK_LENGTH>\n", argv[0]);
 		return -1;
 	}
-	Graph G;
-	G = builtin_loadEdgesFromFile(argv[1]);
+	const int NUM_POINTS = atoi(argv[2]);
+	const int NUM_WALKS = atoi(argv[3]);
+	const int WALK_LENGTH = atoi(argv[4]);
+	Graph_T G;
+	G = load_graph(argv[1]);
 
 	int32_t num_vertices = builtin_getVertices(G);
 
@@ -28,8 +24,10 @@ int main(int argc, char* argv[]) {
 	// This will always be smaller than num_vertices. 
 	int32_t *scores_id = new int[NUM_POINTS * WALK_LENGTH * NUM_WALKS]; 
 	int32_t *scores_count = new int[NUM_POINTS * WALK_LENGTH * NUM_WALKS];	
-	std::unordered_map<int, int> *scores = new std::unordered_map<int, int>[NUM_POINTS];
-
+	google::dense_hash_map<int, int> *scores = new google::dense_hash_map<int, int>[NUM_POINTS];
+	for (int i = 0; i < NUM_POINTS; i++) {
+		scores[i].set_empty_key(-1);
+	}
 	if (scores == nullptr) {
 		printf("Out of mem\n");
 		return -1;
@@ -38,11 +36,12 @@ int main(int argc, char* argv[]) {
 	int32_t *points = new int[NUM_POINTS];
 	
 	// We will use first n points just for reproducibility across implementations
+	srand(17);
 	for (int i = 0; i < NUM_POINTS; i++) {
-		points[i] = i;
+		points[i] = rand() % num_vertices;
 	}	
 
-
+	float total_map_time = 0;
 	startTimer();
 	for (int trial = 0; trial < 10; trial++) {	
 		// Reset scores 
@@ -79,8 +78,10 @@ int main(int argc, char* argv[]) {
 	}
 
 	float elapsed = stopTimer();
-	
-	std::cout << "Total time elapsed = " << elapsed << std::endl;
+	printf("Runtime: %f\n", elapsed);
+	//std::cout << "Total time elapsed = " << elapsed << std::endl;
+
+	//printf("Total time in map: %f\n", total_map_time);
 	return 0;
 	
 }

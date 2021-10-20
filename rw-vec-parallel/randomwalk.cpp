@@ -69,7 +69,8 @@ int main(int argc, char* argv[]) {
 
 	float elapsed = stopTimer();
 	
-	std::cout << "Total time elapsed = " << elapsed << std::endl;
+	//std::cout << "Total time elapsed = " << elapsed << std::endl;
+	printf("%f\n", elapsed);
 	return 0;
 	
 }
